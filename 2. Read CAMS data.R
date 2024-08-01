@@ -56,8 +56,8 @@ var_name  <- c('nitrogen_dioxide', 'ozone', 'particulate_matter_10um',
                'particulate_matter_2.5um')
 
 # Login details - create account on CDS
-wf_set_key(user    = "15882", 
-           key     = "c75e9e6e-343f-4def-9b0a-7c419d4c1c48",
+wf_set_key(user    = ..., 
+           key     = ...,
            service = "ads")
 
 # Request information
@@ -73,7 +73,7 @@ request <- list(
   target = paste0('o3_2013_H1.tar.gz'))
 
 # Download
-wf_request(user = "15882", request = request, 
+wf_request(user = ..., request = request, 
            path = paste0(getwd(),'/Data/CAMS'))
 
 ## Repeat the above downloading steps for every half year in 2013-2019 and for 

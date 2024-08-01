@@ -70,7 +70,7 @@ df      <- readRDS(file)
 
 # Add baseline deaths 
 fitb <- readRDS(paste0('Results/Data/bDeaths_NUTS', nuts.spec, '_',
-                  paste0(ctry.spec, collapse = '-'), '.rds'))
+                       paste0(ctry.spec, collapse = '-'), '.rds'))
 df   <- df %>% left_join(fitb[,c('Date','Region','bDeaths')], 
                          by = c('Date','Region')) %>% na.omit()
 
@@ -232,39 +232,35 @@ results <- foreach(k = 1:nrow(gridr),
                      wd_data <- "C:/Users/u0131219/OneDrive - KU Leuven/Gridded datasets/"
                      file    <- paste0(wd_data, 'Weekly combined/df_tune.rds')
                      df      <- readRDS(file)
-
+                     
                      # Number of iterations
                      nrounds.max <- max(grid$nrounds)
                      nrounds.vec <- unique(grid$nrounds)
-
+                     
                      # Parameter values
                      max_depth        <- gridr[k,'max_depth']
                      vfold            <- gridr[k,'fold']
-
+                     
                      # Training and validation set
                      df.train <- df %>% dplyr::filter(Fold != vfold)
                      df.val   <- df %>% dplyr::filter(Fold == vfold)
-
+                     
                      # Fit GBM for each parameter combination in tuning grid
                      obj <- cv.xgb(df.train, df.val, vars, nrounds.max,
                                    nrounds.vec, max_depth)
-
+                     
                      obj
                    }
 close(pb)
 parallel::stopCluster(cl)
 
 # Set names 
-names(results) <- sapply(1:nrow(gridr), function(j) paste0('eta_', gridr[j,1], 
-                                                           '/maxdepth_', gridr[j,2],
-                                                           '/minchildweight_',gridr[j,3], 
-                                                           '/subsample_', gridr[j,4],  
-                                                           '/colsamplebytree_',gridr[j,5], 
-                                                           '/vfold_',gridr[j,6]))
+names(results) <- sapply(1:nrow(gridr), function(j) paste0('maxdepth_', gridr[j,'max_depth'],
+                                                           '/vfold_',gridr[j,'fold']))
 names(results) 
 
 # Save the results
-file.xgb <-  paste0(wd_data,'Results/xgbCV_results_2013-2018.rds')
+file.xgb <-  'Results/XGB/xgbCV_results.rds'
 # saveRDS(results, file.xgb)
 
 # Read the results
@@ -273,25 +269,21 @@ results      <- do.call('rbind', results.list) %>% as.data.frame()
 
 # Manipulate data frame
 info              <- str_extract_all(rownames(results),"\\(?[0-9,.]+\\)?")
-results$eta       <- as.numeric(unlist(sapply(info,  `[`, 1)))
-results$max_depth <- as.numeric(unlist(sapply(info,  `[`, 2)))
-results$min_child_weight <- as.numeric(unlist(sapply(info,  `[`, 3)))
-results$subsample <- as.numeric(unlist(sapply(info,  `[`, 4)))
-results$colsample_bytree <- as.numeric(unlist(sapply(info,  `[`, 5)))
-results$vfold     <- as.numeric(unlist(sapply(info,  `[`, 6)))
+results$max_depth <- as.numeric(unlist(sapply(info,  `[`, 1)))
+results$vfold     <- as.numeric(unlist(sapply(info,  `[`, 2)))
 rownames(results) <- NULL
 
 # Sum accross folds
 results <- results %>% 
-  group_by(eta, max_depth, min_child_weight, subsample, colsample_bytree) %>%
+  group_by(max_depth) %>%
   summarise(across(everything(), sum)) %>%
   dplyr::select(-c('vfold')) %>% ungroup()
 
 # Find minimum
-trees.vec <- as.numeric(colnames(results)[-c(1:5)])
-min.val   <- apply(results[-c(1:5)], 1, min)
-ind.min   <- apply(results[-c(1:5)], 1, which.min)
-results   <- results[,c(1:5)] %>%
+trees.vec <- as.numeric(colnames(results)[-c(1)])
+min.val   <- apply(results[-c(1)], 1, min)
+ind.min   <- apply(results[-c(1)], 1, which.min)
+results   <- results[,c(1)] %>%
   mutate('ntree_opt' = trees.vec[ind.min],
          'minCV' = min.val)
 tune.opt <- results[which.min(results$minCV),]
@@ -299,12 +291,11 @@ tune.opt <- results[which.min(results$minCV),]
 ###### Fit xgb on entire training data set with optimal parameters
 
 # Full data
-wd_data <- "C:/Users/u0131219/OneDrive - KU Leuven/Gridded datasets/"
-file    <- paste0(wd_data, 'Weekly combined/df_tune_2013-2018.rds')
+file    <- 'Results/Data/df_tune_NUTS3_ES.rds'
 df      <- readRDS(file)
 
 # XGBoost Matrix
-xgb.df <- xgb.DMatrix(data  = as.matrix(df %>% select(vars)),
+xgb.df <- xgb.DMatrix(data  = as.matrix(df %>% select(all_of(vars))),
                       label = as.matrix(df %>% select(Deaths)))
 
 attr(xgb.df, 'offset') <- log(df[['bDeaths']])
@@ -315,11 +306,11 @@ watchlist <- list(eval1 = xgb.df)
 # Fit
 set.seed(1996)
 xgb.opt <- xgb.train(params = list(booster = 'gbtree',
-                                   eta = tune.opt$eta,
+                                   eta = 0.01,
                                    max_depth = tune.opt$max_depth,
-                                   min_child_weight = tune.opt$min_child_weight,
-                                   subsample = tune.opt$subsample,
-                                   colsample_bytree = tune.opt$colsample_bytree,
+                                   min_child_weight = 100,
+                                   subsample = 0.75,
+                                   colsample_bytree = 0.75,
                                    base_score = 0,
                                    lambda = 0,
                                    objective = myobjective,
@@ -331,6 +322,6 @@ xgb.opt <- xgb.train(params = list(booster = 'gbtree',
                   nrounds = tune.opt$ntree_opt,
                   verbose = 1)
 # Save
-filexgb <- paste0(wd_data,'Results/xgb_fit_2013-2018.rds')
+filexgb <- 'Results/XGB/xgb_fit.rds'
 # saveRDS(xgb.opt, file = filexgb)
 

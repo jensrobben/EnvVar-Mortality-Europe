@@ -51,9 +51,9 @@ var_list  <- c('tx', 'tg', 'tn', 'rr','hu','fg')
 var_name  <- c('maximum_temperature', 'mean_temperature', 'minimum_temperature', 
                'precipitation_amount', 'relative_humidity', 'wind_speed')
 
-# Login details - create account on CDS
-wf_set_key(user    = "307320", 
-           key     = "ed8e50f8-d0d4-42c7-9097-b92b10489f11",
+# Login details - create account on CDS and fill in user and key
+wf_set_key(user    = ..., 
+           key     = ...,
            service = "cds")
 
 # Request information
@@ -68,7 +68,7 @@ request <- lapply(1:length(var_name), function(v) list(
   target = paste0(var_list[v],'.tar.gz')))
 
 # Download (about 15 minutes)
-wf_request_batch(user = "307320", request_list = request, 
+wf_request_batch(user = ..., request_list = request, 
            path = paste0(getwd(),'/Data/E-OBS'),
            workers = 6)
 
@@ -85,12 +85,12 @@ lfiles <- paste0(var_list, "_ens_mean_0.1deg_reg_2011-2022_v27.0e.nc")
 
 ##### 3) Download population count data (SEDAC) ----
 
-# Retrieve population count data from SEDAC - zip file
+# Retrieve population count data from SEDAC - zip file (make account)
 url       <-  paste0("https://sedac.ciesin.columbia.edu/downloads/data/",
                      "gpw-v4/gpw-v4-population-count-rev11/",
                      "gpw-v4-population-count-rev11_totpop_2pt5_min_nc.zip")
-user      <- "testcode"
-password  <- "Testcode1999."
+user      <- ...
+password  <- ...
 dest_file <- 'Data/SEDAC/PopulationCount.zip'
 GET(url, authenticate(user, password), write_disk(dest_file))
 
@@ -246,5 +246,3 @@ for(v in 1:length(var_list)) {
                      paste0(ctry.spec, collapse = '_'),'_NUTS3_',var,'_daily','.rds')
   saveRDS(df.region.CLI.daily, file = file.save)
 }
-
-

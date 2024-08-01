@@ -1,1 +1,1 @@
-On this GitHub repository, we will publish the R files related to our paper "The association between environmental variables and short-term mortality: evidence from Europe".
+On this GitHub repository, you can find the R files related to our paper "The association between environmental variables and short-term mortality: evidence from Europe" (available on arXiv: https://arxiv.org/abs/2405.18020). The R files in this GitHub repo focus on the NUTS 3 regions in Spain.
