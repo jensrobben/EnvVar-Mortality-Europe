@@ -1,1 +1,0 @@
-On this GitHub repository, we provide the R files related to our paper "The association between environmental variables and short-term mortality: evidence from Europe", available on arXiv (https://arxiv.org/abs/2405.18020).
