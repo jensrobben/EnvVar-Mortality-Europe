@@ -1,7 +1,7 @@
 ##### 0) Preliminary settings  ----
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()) 
 gc()
 
 # Required packages
