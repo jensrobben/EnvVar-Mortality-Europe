@@ -55,10 +55,8 @@ var_list  <- c('no2', 'o3', 'pm10', 'pm2p5')
 var_name  <- c('nitrogen_dioxide', 'ozone', 'particulate_matter_10um',
                'particulate_matter_2.5um')
 
-# Login details - create account on CDS
-wf_set_key(user    = ..., 
-           key     = ...,
-           service = "ads")
+# Login details
+wf_set_key(key = '...')
 
 # Request information
 request <- list(
@@ -73,8 +71,7 @@ request <- list(
   target = paste0('o3_2013_H1.tar.gz'))
 
 # Download
-wf_request(user = ..., request = request, 
-           path = paste0(getwd(),'/Data/CAMS'))
+wf_request(request = request, path = paste0(getwd(),'/Data/CAMS'))
 
 ## Repeat the above downloading steps for every half year in 2013-2019 and for 
 ## every air pollutant

@@ -51,26 +51,23 @@ var_list  <- c('tx', 'tg', 'tn', 'rr','hu','fg')
 var_name  <- c('maximum_temperature', 'mean_temperature', 'minimum_temperature', 
                'precipitation_amount', 'relative_humidity', 'wind_speed')
 
-# Login details - create account on CDS and fill in user and key
-wf_set_key(user    = ..., 
-           key     = ...,
-           service = "cds")
+# Login details - create account on CDS and fill in your API token 
+wf_set_key(key = '...')
 
 # Request information
 request <- lapply(1:length(var_name), function(v) list(
   product_type = "ensemble_mean",
   variable = var_name[v],
-  grid_resolution = "0.1deg",
-  period = "2011_2022",
-  version = "27.0e",
+  grid_resolution = "0_1deg",
+  period = "2011_2024",
+  version = "30_0e",
   format = "tgz",
   dataset_short_name = "insitu-gridded-observations-europe",
   target = paste0(var_list[v],'.tar.gz')))
 
 # Download (about 15 minutes)
-wf_request_batch(user = ..., request_list = request, 
-           path = paste0(getwd(),'/Data/E-OBS'),
-           workers = 6)
+wf_request_batch(request_list = request, workers = 6,
+                 path = paste0(getwd(),'/Data/E-OBS'))
 
 # Extract files from tar archive
 lfiles <- list.files('Data/E-OBS')
@@ -81,7 +78,7 @@ sapply(1:length(lfiles), function(v)
 file.remove(paste0('Data/E-OBS/',lfiles))
 
 # NC files
-lfiles <- paste0(var_list, "_ens_mean_0.1deg_reg_2011-2022_v27.0e.nc")
+lfiles <- paste0(var_list, "_ens_mean_0.1deg_reg_2011-2024_v30.0e.nc")
 
 ##### 3) Download population count data (SEDAC) ----
 
@@ -89,10 +86,12 @@ lfiles <- paste0(var_list, "_ens_mean_0.1deg_reg_2011-2022_v27.0e.nc")
 url       <-  paste0("https://sedac.ciesin.columbia.edu/downloads/data/",
                      "gpw-v4/gpw-v4-population-count-rev11/",
                      "gpw-v4-population-count-rev11_totpop_2pt5_min_nc.zip")
-user      <- ...
-password  <- ...
+user      <- "..."
+password  <- "..."
 dest_file <- 'Data/SEDAC/PopulationCount.zip'
-GET(url, authenticate(user, password), write_disk(dest_file))
+httr::GET(url, authenticate(user, password), 
+          write_disk(dest_file, overwrite = TRUE),
+          set_cookies("urs_user_already_logged" = "true"))
 
 # Unzip nc file
 unzip(zipfile = "Data/SEDAC/PopulationCount.zip", 
@@ -141,7 +140,7 @@ for(v in 1:length(var_list)) {
   var.array <- var.array[id.long, id.lat, id.time]
   dimnames(var.array) <- list(long, lat, as.character(date))
   
-  # Plot the climate feature on world map at random time point date
+  # Plot the climate feature on world map at random time point
   pick.date <- "2015-08-02"
   subarray  <- var.array[,,as.character(pick.date)] %>% as.data.frame() %>%
     rownames_to_column('long') %>%
